@@ -21,7 +21,7 @@ fmtname(char *path)
   memset(buf+strlen(p), ' ', DIRSIZ-strlen(p));
   return buf;
 }
-
+//fmtname返回path下的文件名
 void
 ls(char *path)
 {
@@ -56,6 +56,8 @@ ls(char *path)
     p = buf+strlen(buf);
     *p++ = '/';
     while(read(fd, &de, sizeof(de)) == sizeof(de)){
+      // 屏蔽.  ..两个目录 if(!strcmp(de.name, ".") || !strcmp(de.name, ".."))
+      //   continue;
       if(de.inum == 0)
         continue;
       memmove(p, de.name, DIRSIZ);
