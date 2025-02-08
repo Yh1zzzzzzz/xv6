@@ -145,7 +145,7 @@ found:
   memset(&p->context, 0, sizeof(p->context));
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
-
+  p->trace = 0;
   return p;
 }
 
@@ -169,6 +169,8 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  p->trace = 0;
+
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -295,7 +297,7 @@ fork(void)
     return -1;
   }
   np->sz = p->sz;
-
+  np->trace = p->trace;
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
 
@@ -680,4 +682,18 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+//lab 2 sysproc
+int NumOfUnusedProc()
+{
+  struct proc *p;
+  int counter = 0;
+  for(p = proc; p < &proc[NPROC]; p++){
+    acquire(&p->lock);
+    if(p->state != UNUSED)
+      counter += 1;
+    release(&p->lock);
+  }
+  return counter;
 }
