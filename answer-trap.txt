@@ -1,0 +1,4 @@
+q1:Which registers contain arguments to functions? For example, which register holds 13 in main's call to printf?
+a1:register a2
+
+q2:Where is the call to function f in the assembly code for main? Where is the call to g? (Hint: the compiler may inline functions.)

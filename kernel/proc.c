@@ -145,8 +145,11 @@ found:
   memset(&p->context, 0, sizeof(p->context));
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
-
+  p->tick_so_far = 0;
+  p->set_sig = 0;
+  p->a0 = 0;
   return p;
+
 }
 
 // free a proc structure and the data hanging from it,

@@ -15,7 +15,9 @@ extern char trampoline[], uservec[], userret[];
 void kernelvec();
 
 extern int devintr();
-
+void trapframeBackup(struct proc *p){
+  memmove(&p->trapframecopy, p->trapframe, sizeof(struct trapframe));
+}
 void
 trapinit(void)
 {
@@ -66,6 +68,16 @@ usertrap(void)
 
     syscall();
   } else if((which_dev = devintr()) != 0){
+      if(which_dev == 2)
+        p->tick_so_far += 1;
+      if((p->tick_so_far % p->num_tick == 0) && p->set_sig)
+        {          
+          //p->real_epc = p->trapframe->epc;
+          trapframeBackup(p);
+          p->trapframe->epc = (uint64)p->fn;
+          p->set_sig = 0;
+        }
+
     // ok
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
@@ -106,7 +118,7 @@ usertrapret(void)
   p->trapframe->kernel_sp = p->kstack + PGSIZE; // process's kernel stack
   p->trapframe->kernel_trap = (uint64)usertrap;
   p->trapframe->kernel_hartid = r_tp();         // hartid for cpuid()
-
+  //p->trapframe->a0 = p->a0;
   // set up the registers that trampoline.S's sret will use
   // to get to user space.
   
