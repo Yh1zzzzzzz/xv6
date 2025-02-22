@@ -10,7 +10,8 @@ struct spinlock tickslock;
 uint ticks;
 
 extern char trampoline[], uservec[], userret[];
-
+extern int page_ref[];
+extern struct spinlock ref_lock;
 // in kernelvec.S, calls kerneltrap().
 void kernelvec();
 
@@ -49,7 +50,8 @@ usertrap(void)
   
   // save user program counter.
   p->trapframe->epc = r_sepc();
-  
+  int cow_result = 0;
+
   if(r_scause() == 8){
     // system call
 
@@ -59,15 +61,27 @@ usertrap(void)
     // sepc points to the ecall instruction,
     // but we want to return to the next instruction.
     p->trapframe->epc += 4;
-
     // an interrupt will change sepc, scause, and sstatus,
     // so enable only now that we're done with those registers.
     intr_on();
 
     syscall();
+  } else if(r_scause() == 15){
+      //page falut
+      //panic("catch cow fault\n");
+      if((cow_result = COW(p)) != 0){
+        if(cow_result == 1){
+          printf("catch none cow pagefault\n");
+          printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
+          printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
+          setkilled(p);
+        }
+      }
+      
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {
+    printf("im here\n");
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     setkilled(p);
@@ -218,4 +232,53 @@ devintr()
     return 0;
   }
 }
+int COW_mappages(pagetable_t pagetable,uint64 va,uint64 size, uint64 pa, int perm)
+{
+  uint64 a, last;
+  pte_t *pte;
 
+  if(size == 0)
+    panic("mappages: size");
+  
+  a = PGROUNDDOWN(va);
+  last = PGROUNDDOWN(va + size - 1);
+  for(;;){
+    if((pte = walk(pagetable, a, 0)) == 0)
+      return -1;
+    if((*pte & PTE_COW) == 0)
+      panic("COW_mapp: invailid cow");
+    *pte = PA2PTE(pa) | perm | PTE_V;
+    if(a == last)
+      break;
+    a += PGSIZE;
+    pa += PGSIZE;
+  }
+  return 0;
+}
+int COW(struct proc* p){
+  uint64 err_address = r_stval();
+  uint64 va = PGROUNDDOWN(err_address);
+  pte_t *pte = walk(p->pagetable, va, 0);
+  if((PTE_FLAGS(*pte) & PTE_COW) == 0){
+    printf("trap.c COW none cow fault\n kill current process:%d\n",p->pid);
+    return 1; ///不是cow ，返回1不处理
+  }
+  uint64 flag = PTE_FLAGS(*pte);
+  uint64 pa = PTE2PA(*pte);
+  //下面是对cow 进行处理，如果是cow
+  // 返回 0 正常
+  // 返回 -1 无内存
+  char *mem;
+  if((mem = (char *)kalloc()) == 0){
+    setkilled(p);
+    return -1;
+  }
+  flag &= ~(PTE_COW);
+  memmove(mem, (char *) pa, PGSIZE);
+  kfree((void*)pa);
+  COW_mappages(p->pagetable, va, PGSIZE, (uint64)mem, PTE_R|PTE_W | flag);//到这里完成了新的pte建立与映射
+  //对原本的COW标志pte进行清除,并恢复可写权限
+  // *pte |= PTE_W;
+  // *pte &= ~(PTE_COW);
+  return 0;
+}

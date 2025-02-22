@@ -10,9 +10,9 @@
  * the kernel's page table.
  */
 pagetable_t kernel_pagetable;
-
+extern int page_ref[];
 extern char etext[];  // kernel.ld sets this to end of kernel code.
-
+extern struct spinlock ref_lock;
 extern char trampoline[]; // trampoline.S
 
 // Make a direct-map page table for the kernel.
@@ -86,7 +86,11 @@ pte_t *
 walk(pagetable_t pagetable, uint64 va, int alloc)
 {
   if(va >= MAXVA)
-    panic("walk");
+  { 
+    printf("PANIC : walk");
+    setkilled(myproc());
+    exit(-1);
+  }
 
   for(int level = 2; level > 0; level--) {
     pte_t *pte = &pagetable[PX(level, va)];
@@ -332,6 +336,41 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   return -1;
 }
 
+
+
+//uvmcopy for COW
+int COWcopy(pagetable_t new, pagetable_t old, uint64 sz)
+{
+  //对于本就为只读的不操作
+  //对于为可读可写的pte，清除写，添加cow
+  pte_t *pte;
+  uint64 pa, i;
+  uint64 flag;
+  for(i = 0; i < sz; i += PGSIZE){
+    if((pte = walk(old, i, 0)) == 0)
+      panic("cowcopy: pte should exist");
+    if((*pte & PTE_V) == 0)
+      panic("cowcopy: page not present");
+    pa = PTE2PA(*pte);
+    if((*pte & PTE_W) ){
+      *pte &= ~(PTE_W);
+      *pte |= PTE_COW;
+    }
+    flag = PTE_FLAGS(*pte);
+    //grow_ref((void*)pa);
+    //此处创建pte
+    acquire(&ref_lock);
+    page_ref[(uint64)pa / PGSIZE] ++;
+    release(&ref_lock);
+    if(mappages(new, i, PGSIZE, pa, PTE_COW | PTE_R | flag) != 0){
+      panic("cowcopy mappages");
+    }
+  }
+  return 0;
+}
+
+
+
 // mark a PTE invalid for user access.
 // used by exec for the user stack guard page.
 void
@@ -351,17 +390,38 @@ uvmclear(pagetable_t pagetable, uint64 va)
 int
 copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 {
+  char* mem;
   uint64 n, va0, pa0;
-
   while(len > 0){
     va0 = PGROUNDDOWN(dstva);
     pa0 = walkaddr(pagetable, va0);
+    if(va0 > MAXVA){
+      return -1;
+    }
     if(pa0 == 0)
       return -1;
-    n = PGSIZE - (dstva - va0);
-    if(n > len)
+    pte_t* pte = walk(pagetable, va0, 0);
+    if(*pte & PTE_COW){
+      //对cow进行处理
+      
+      uint64 flag = PTE_FLAGS(*pte);
+      uint64 pa = PTE2PA(*pte);
+
+      if((mem = (char *)kalloc()) == 0){
+        setkilled(myproc());
+        printf("out of mem\n");
+        break;
+      }
+      flag &= ~(PTE_COW);
+      memmove(mem, (char *) pa, PGSIZE);
+      kfree((void*)pa);
+      COW_mappages(pagetable, va0, PGSIZE, (uint64)mem, PTE_R|PTE_W | flag);//到这里完成了新的pte建立与映射
+      pa0 = (uint64)mem;
+      }
+      n = PGSIZE - (dstva - va0);
+      if(n > len)
       n = len;
-    memmove((void *)(pa0 + (dstva - va0)), src, n);
+      memmove((void *)(pa0 + (dstva - va0)), src, n);
 
     len -= n;
     src += n;
