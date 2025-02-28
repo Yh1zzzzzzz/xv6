@@ -259,6 +259,9 @@ int COW(struct proc* p){
   uint64 err_address = r_stval();
   uint64 va = PGROUNDDOWN(err_address);
   pte_t *pte = walk(p->pagetable, va, 0);
+  if(va > MAXVA){
+    return 1;
+  }
   if((PTE_FLAGS(*pte) & PTE_COW) == 0){
     printf("trap.c COW none cow fault\n kill current process:%d\n",p->pid);
     return 1; ///不是cow ，返回1不处理

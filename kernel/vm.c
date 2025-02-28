@@ -392,15 +392,18 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 {
   char* mem;
   uint64 n, va0, pa0;
+  //if(va0 > MAXVA){
+  //  return -1;
+  //:}
   while(len > 0){
     va0 = PGROUNDDOWN(dstva);
     pa0 = walkaddr(pagetable, va0);
-    if(va0 > MAXVA){
-      return -1;
-    }
+    
     if(pa0 == 0)
       return -1;
     pte_t* pte = walk(pagetable, va0, 0);
+    if((*pte & PTE_V)==0 || (*pte & PTE_U)==0 || pte==0)
+      return -1;
     if(*pte & PTE_COW){
       //对cow进行处理
       

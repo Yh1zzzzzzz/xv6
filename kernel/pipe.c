@@ -88,7 +88,7 @@ pipewrite(struct pipe *pi, uint64 addr, int n)
     if(pi->nwrite == pi->nread + PIPESIZE){ //DOC: pipewrite-full
       wakeup(&pi->nread);
       sleep(&pi->nwrite, &pi->lock);
-    } else {
+    } else { 
       char ch;
       if(copyin(pr->pagetable, &ch, addr + i, 1) == -1)
         break;
