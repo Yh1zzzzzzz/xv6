@@ -9,17 +9,39 @@
 
 #define STACK_SIZE  8192
 #define MAX_THREAD  4
+struct context {
+
+  uint64 sp;
+  uint64 ra;// a b are just garbage;
+  // callee-saved
+  uint64 s0;
+  uint64 s1;
+  uint64 s2;
+  uint64 s3;
+  uint64 s4;
+  uint64 s5;
+  uint64 s6;
+  uint64 s7;
+  uint64 s8;
+  uint64 s9;
+  uint64 s10;
+  uint64 s11;
+};
+
 
 
 struct thread {
   char       stack[STACK_SIZE]; /* the thread's stack */
   int        state;             /* FREE, RUNNING, RUNNABLE */
+  struct context content;
+  void  (*f)();
+  int       first;
 };
 struct thread all_thread[MAX_THREAD];
 struct thread *current_thread;
 extern void thread_switch(uint64, uint64);
-              
-void 
+
+void
 thread_init(void)
 {
   // main() is thread 0, which will make the first invocation to
@@ -35,7 +57,6 @@ void
 thread_schedule(void)
 {
   struct thread *t, *next_thread;
-
   /* Find another runnable thread. */
   next_thread = 0;
   t = current_thread + 1;
@@ -61,7 +82,15 @@ thread_schedule(void)
     /* YOUR CODE HERE
      * Invoke thread_switch to switch from t to next_thread:
      * thread_switch(??, ??);
-     */
+     *
+     */    
+      //CHECK IF THE NEW THREAD IS THE FIRST TIME TO RUN
+    thread_switch((uint64)&t->content, (uint64)&current_thread->content); // t -->被切出的进程 cur--->新进程
+      //  t0(save) -> t1 -> funca
+      //  t1(save,ra更新) -> t2 -> funcb
+      //  t2(save,ra更新) -> t3 -> funcc
+      //  t3(save,ra更新) -> t1 -> funca 
+      
   } else
     next_thread = 0;
 }
@@ -76,6 +105,12 @@ thread_create(void (*func)())
   }
   t->state = RUNNABLE;
   // YOUR CODE HERE
+  // 创建stack？
+  //current_thread = t;
+  t->f = func;
+  t->content.sp = (uint64)&t->stack[STACK_SIZE - 1];
+  t->content.ra = (uint64)func;
+  t->first = 0;
 }
 
 void 

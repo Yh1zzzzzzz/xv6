@@ -8,6 +8,7 @@
 #define NBUCKET 5
 #define NKEYS 100000
 
+pthread_mutex_t lock[NBUCKET];
 struct entry {
   int key;
   int value;
@@ -43,6 +44,7 @@ void put(int key, int value)
 
   // is the key already present?
   struct entry *e = 0;
+  pthread_mutex_lock(&lock[i]);
   for (e = table[i]; e != 0; e = e->next) {
     if (e->key == key)
       break;
@@ -55,6 +57,7 @@ void put(int key, int value)
     insert(key, value, &table[i], table[i]);
   }
 
+    pthread_mutex_unlock(&lock[i]);
 }
 
 static struct entry*
@@ -64,9 +67,11 @@ get(int key)
 
 
   struct entry *e = 0;
+  pthread_mutex_lock(&lock[i]);
   for (e = table[i]; e != 0; e = e->next) {
     if (e->key == key) break;
   }
+  pthread_mutex_unlock(&lock[i]);
 
   return e;
 }
@@ -104,8 +109,9 @@ main(int argc, char *argv[])
   pthread_t *tha;
   void *value;
   double t1, t0;
-
-
+  for(int i = 0; i < NBUCKET; i++) {
+  pthread_mutex_init(&lock[i], NULL);
+  }
   if (argc < 2) {
     fprintf(stderr, "Usage: %s nthreads\n", argv[0]);
     exit(-1);
