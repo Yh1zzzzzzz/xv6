@@ -416,6 +416,43 @@ bmap(struct inode *ip, uint bn)
     brelse(bp);
     return addr;
   }
+  bn -= NINDIRECT;
+  int first_pos = bn /  256; //第一级表的索引
+  int second_pos = bn % 256;
+  //先创建目录到第一张表的指针
+  if((addr = ip->addrs[NDIRECT + 1]) == 0){
+    addr = balloc(ip->dev);
+    if(addr ==0)
+      return 0;
+    ip->addrs[NDIRECT + 1] = addr;
+  }
+  struct buf* bp1 = bread(ip->dev, addr);
+  a = (uint*)bp1->data;
+  if((addr = a[first_pos]) == 0){
+    addr = balloc(ip->dev);
+    if(addr ==0)
+      return 0;
+    if(addr){
+      a[first_pos] = addr;
+      log_write(bp1);
+    }
+  }
+  struct buf* bp2 = bread(ip->dev, addr);
+  uint *b = (uint*)bp2->data;
+  if((addr = b[second_pos]) == 0){
+    addr = balloc(ip->dev);
+    if(addr ==0)
+      return 0;
+    if(addr){
+      b[second_pos] = addr;
+      log_write(bp2);
+    }
+  }
+  brelse(bp1);
+  brelse(bp2);
+  return addr;
+  
+  //deal with double indirect
 
   panic("bmap: out of range");
 }
@@ -447,7 +484,26 @@ itrunc(struct inode *ip)
     bfree(ip->dev, ip->addrs[NDIRECT]);
     ip->addrs[NDIRECT] = 0;
   }
-
+  // kill  double indirect
+  if(ip->addrs[NDIRECT + 1]){
+    bp = bread(ip->dev, ip->addrs[NDIRECT + 1]);
+    a = (uint*)bp->data;
+    for(int k = 0; k < 256; k++){
+      if(a[k]){
+        struct buf *bp2 = bread(ip->dev, a[k]);
+        uint *b =(uint*)bp2->data;
+        for(int kk = 0; kk < 256; kk++){
+          if(b[kk])
+            bfree(ip->dev, b[kk]);
+        }
+        bfree(ip->dev, a[k]);
+        brelse(bp2);
+      }
+    }
+    brelse(bp);
+    bfree(ip->dev, ip->addrs[NDIRECT+1]);
+    ip->addrs[NDIRECT+1] = 0;
+  }
   ip->size = 0;
   iupdate(ip);
 }

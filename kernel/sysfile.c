@@ -130,7 +130,7 @@ sys_link(void)
     return -1;
 
   begin_op();
-  if((ip = namei(old)) == 0){
+  if((ip = namei(old)) == 0){     // namei  return inode
     end_op();
     return -1;
   }
@@ -327,6 +327,8 @@ sys_open(void)
       end_op();
       return -1;
     }
+    //if(! (omode & O_NOFOLLOW))
+      //ip = namei(ip->target);
     ilock(ip);
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
@@ -334,13 +336,33 @@ sys_open(void)
       return -1;
     }
   }
-
   if(ip->type == T_DEVICE && (ip->major < 0 || ip->major >= NDEV)){
     iunlockput(ip);
     end_op();
     return -1;
   }
-
+  if(ip->type == T_SYMLINK){
+    if(!(omode & O_NOFOLLOW)){
+      int cycle = 0;
+      char target[MAXPATH];
+      while(ip->type == T_SYMLINK){
+        if(cycle == 10){
+          iunlockput(ip);
+          end_op();
+          return -1; // max cycle
+        }
+        cycle++;
+        memset(target, 0, sizeof(target));
+        readi(ip, 0, (uint64)target, 0, MAXPATH);
+        iunlockput(ip);
+        if((ip = namei(target)) == 0){
+          end_op();
+          return -1; // target not exist
+        }
+        ilock(ip);
+      }
+    }
+  }
   if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){
     if(f)
       fileclose(f);
@@ -503,3 +525,61 @@ sys_pipe(void)
   }
   return 0;
 }
+uint64
+sys_symlink(void){
+
+  char  target[MAXPATH], path[MAXPATH];
+  memset(target, 0, sizeof(target));
+  if(argstr(0, target, MAXPATH) < 0 || argstr(1, path, MAXPATH) < 0)
+    return -1;
+  begin_op();
+
+ 
+  //不能使用dirlink 该函数是创建dirent 但是symlink是创建inode
+  struct inode* newi;
+  if((newi = create(path, T_SYMLINK, 0, 0)) == 0){
+  end_op();
+  return -1;
+  }
+
+  if (writei(newi, 0, (uint64)target, 0, strlen(target) + 1) != strlen(target) + 1) {
+    return -1;
+  }
+  iupdate(newi);
+  iunlockput(newi);
+
+  end_op();
+
+  return 0;
+
+}
+
+/*uint64
+sys_symlink(void)
+{
+  char target[MAXPATH];
+  memset(target, 0, sizeof(target));
+  char path[MAXPATH];
+  if(argstr(0, target, MAXPATH) < 0 || argstr(1, path, MAXPATH) < 0){
+    return -1;
+  }
+  
+  struct inode *ip;
+
+  begin_op();
+  if((ip = create(path, T_SYMLINK, 0, 0)) == 0){
+    end_op();
+    return -1;
+  }
+
+  if(writei(ip, 0, (uint64)target, 0, MAXPATH) != MAXPATH){
+    // panic("symlink write failed");
+    return -1;
+  }
+
+  iunlockput(ip);
+  end_op();
+  return 0;
+}
+
+*/
