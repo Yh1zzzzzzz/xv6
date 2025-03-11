@@ -11,5 +11,6 @@ struct buf {
   int pos; // its position at hash_table
   uint ticks; // for LRU:w
 
+  int cpu;
 };
 
