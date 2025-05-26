@@ -5,14 +5,14 @@
 This repository contains solutions for multiple labs, with each solution maintained in its own Git branch. This structure allows:
 
 - Clean separation of different lab implementations  
-- Easy access to specific solutions without file conflicts  
+- Easy access to specific solutions without file conflicts
 - Clear version history for each lab  
 
 ## 📂 Accessing Solutions
 
 To view any lab implementation:
 
-1. **List all available branches:**  
+1. List all available branches:**  
    ```bash
    git branch -a
 
