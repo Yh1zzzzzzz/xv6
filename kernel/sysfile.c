@@ -15,7 +15,8 @@
 #include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
-
+extern int VMA_count; 
+struct VAM V[16];
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -501,5 +502,56 @@ sys_pipe(void)
     fileclose(wf);
     return -1;
   }
+  return 0;
+}
+uint64
+sys_mmap(void){
+  //set PTE_M
+  /*
+  uint64 *addr;
+  int len;
+  argaddr(0, (uint64*)&addr);
+  argint(1, &len);
+  uint64 va = PGROUNDDOWN((uint64)addr);
+  uint64 end_va = PGROUNDDOWN((uint64)addr + len);
+  for(va; va < end_va; va += PGSIZE){
+    struct proc *p = myproc();
+    pte_t *pte;
+    if((pte = walk(p->pagetable, va, 1)) == 0){
+      return -1;
+    }
+    *pte |= PTE_M;
+  }
+    */
+  //add VMA to proc
+  void *addr;
+  int length; 
+  int prot;
+  int flags;
+  int fd;
+  int offset;
+  struct file *f;
+  argaddr(0, (uint64*)&addr);
+  argint(1, &length);
+  argint(2, &prot);
+  argint(3, &flags);
+  argfd(4, &fd, &f);
+  argint(5, &offset);
+  int VMA_C = VMA_count++;
+  struct proc *p = myproc();
+  struct VAM *vma;
+  vma->start = (uint64)addr;
+  vma->end = (uint64)addr + length;
+  vma->prot = prot;
+  vma->flags = flags;
+  vma->file = f;
+  vma->offset = offset;
+  p->vma = vma;
+  V[VMA_C] = *vma;
+  return 0;
+}
+uint64
+sys_munmap(void){
+
   return 0;
 }

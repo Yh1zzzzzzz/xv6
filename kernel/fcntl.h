@@ -12,4 +12,14 @@
 
 #define MAP_SHARED      0x01
 #define MAP_PRIVATE     0x02
+struct VAM{
+    uint64 start;
+    uint64 end;
+    int prot;
+    int flags;
+    struct file *file;
+    uint64 offset;
+    
+};
+int VMA_count = 0;
 #endif
