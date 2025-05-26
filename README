@@ -1,3 +1,22 @@
+# Project Labs Implementation
+
+## Organization
+
+This repository contains solutions for multiple labs, with each solution maintained in its own Git branch. This structure allows:
+- Clean separation of different lab implementations
+- Easy access to specific solutions without file conflicts
+- Clear version history for each lab
+
+## Accessing Solutions
+
+To view any lab implementation:
+1. List all available branches: `git branch -a`
+2. Checkout the desired branch: `git checkout lab_x`
+3. The complete solution will be in your working directory
+
+## Branch Naming Convention
+Branches follow the pattern `lab_<number>` (e.g., `lab_1`, `lab_2`)
+
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 (v6).  xv6 loosely follows the structure and style of v6,
 but is implemented for a modern RISC-V multiprocessor using ANSI C.
