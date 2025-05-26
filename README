@@ -1,21 +1,24 @@
-# Project Labs Implementation
+# <span style="font-size: 28px; color: #FF5733;">Project Labs Implementation</span>
 
-## Organization
+## <span style="font-size: 24px; background-color: #FFFF00; padding: 3px;">Organization</span>
 
+<span style="font-size: 18px;">
 This repository contains solutions for multiple labs, with each solution maintained in its own Git branch. This structure allows:
-- Clean separation of different lab implementations
-- Easy access to specific solutions without file conflicts
-- Clear version history for each lab
+</span>
 
-## Accessing Solutions
+- <span style="font-size: 18px;">Clean separation of different lab implementations</span>
+- <span style="font-size: 18px;">Easy access to specific solutions without file conflicts</span>
+- <span style="font-size: 18px;">Clear version history for each lab</span>
 
+## <span style="font-size: 24px; background-color: #FFFF00; padding: 3px;">Accessing Solutions</span>
+
+<span style="font-size: 18px;">
 To view any lab implementation:
-1. List all available branches: `git branch -a`
-2. Checkout the desired branch: `git checkout lab_x`
-3. The complete solution will be in your working directory
+</span>
 
-## Branch Naming Convention
-Branches follow the pattern `lab_<number>` (e.g., `lab_1`, `lab_2`)
+1. <span style="font-size: 18px; font-weight: bold;">List all available branches:</span> <code style="font-size: 16px; background: #f0f0f0; padding: 2px 5px;">git branch -a</code>
+2. <span style="font-size: 18px; font-weight: bold;">Checkout the desired branch:</span> <code style="font-size: 16px; background: #f0f0f0; padding: 2px 5px;">git checkout lab_x</code>
+3. <span style="font-size: 18px; font-weight: bold;">The complete solution will be in your working directory</span>
 
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 (v6).  xv6 loosely follows the structure and style of v6,
