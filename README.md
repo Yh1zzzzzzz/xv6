@@ -21,9 +21,9 @@ To view any lab implementation:
    ```bash
    git branch -a
 Checkout the desired branch
-git checkout lab_x
+git checkout cow
 The complete solution will be in your working directory
-
+ ```
 
 
 🧠 About xv6
