@@ -17,10 +17,11 @@
 
 To view any lab implementation:
 
-1. **List all available branches**  
+1. **List all available branches**
+
 ```bash
-git branch -a       # List all branches (local and remote)
-git checkout cow    # Switch to the 'cow' branch
+git branch -a       
+git checkout cow   
 ```
 
 ## About XV6
