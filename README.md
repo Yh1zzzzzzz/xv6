@@ -21,6 +21,7 @@ To view any lab implementation:
 ```bash
 git branch -a       # List all branches (local and remote)
 git checkout cow    # Switch to the 'cow' branch
+```
 
 ## About XV6
 
