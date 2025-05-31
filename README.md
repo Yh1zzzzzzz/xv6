@@ -18,19 +18,15 @@
 To view any lab implementation:
 
 1. **List all available branches**  
-   ```bash
-   git branch -a
-Checkout the desired branch
-git checkout cow
-The complete solution will be in your working directory
- ```
+```bash
+git branch -a       # List all branches (local and remote)
+git checkout cow    # Switch to the 'cow' branch
 
+## About XV6
 
-🧠 About xv6
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix Version 6 (v6).
 It loosely follows the structure and style of v6, but is implemented for a modern RISC-V multiprocessor using ANSI C.
 
-🙏 Acknowledgments
 xv6 is inspired by John Lions's Commentary on UNIX 6th Edition.
 See also: MIT 6.1810 Course Site
 
@@ -43,11 +39,6 @@ Cliff Frey, Xiao Yu (multiprocessor support)
 
 Nickolai Zeldovich, Austin Clements
 
-And many more...
-
-We are grateful for the bug reports and patches contributed by the community.
-
-(Full contributor list omitted here for brevity, but should be included if needed.)
 
 🛠️ Building and Running xv6
 Requirements
